@@ -17,3 +17,37 @@ when/why can update be a function argument? like in #264
 	update: StateBuilder.To<any, any>
 #664 may be of help
 
+UPDATE MULTIPLE TRANSFORMS
+you can update multiple transforms at the same time like this: #134
+	const refsOrSelectors = ...;
+	const update = pluing.build();
+	for (const r of refsOrSelectors) {
+	  update.to(r).update(...);
+	}
+	await update.commit()
+
+REMOVE LOADED PDB FROM SESSION #454
+When you load the PDB file you should get a reference to the root (usually the download transform)
+You can then do something like this:
+const update = molstar.build();
+	for (const ref of roots) update.delete();
+	await update.commit();
+
+example:
+	### INIT function, e.g. in useEffect
+	const ref = await window.molstar.builders.data.download(
+		{url: `URLTOPDBFILE`},
+		{state: {isGhost: true},}
+	);
+	const trajectory =
+		await window.molstar.builders.structure.parseTrajectory(data, "pdb");
+	await window.molstar.builders.structure.hierarchy.applyPreset(
+		trajectory,
+		"default"
+	);
+
+	### FUNCTION for deleting
+	const update = molstar.build();
+	update.delete(ref); # this is the ref from above
+	await update.commit();
+
