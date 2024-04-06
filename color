@@ -1,0 +1,41 @@
+CHANGING COLOR
+there are two basic ways to apply custom coloring to residues: #1050
+	write a custom theme that takes the coloring data as params (example https://github.com/molstar/molstar/blob/a1e2b0e5aec4d92fe84fcf8e6bfe1f08cdc08a29/src/extensions/pdbe/structure-quality-report/color.ts#L44)
+	use the overpaint mechainsm, which allows you to color representations using a selection (starting point: https://github.com/molstar/molstar/blob/a1e2b0e5aec4d92fe84fcf8e6bfe1f08cdc08a29/src/mol-plugin-state/helpers/structure-overpaint.ts#L21-L22)
+discussions/987
+the primary purpose of overpaint is to easily paint over any existing color theme
+in many cases a theme can be used to change a representation's color, but overpaint offers a second path for coloring that does not need to know about any themes, existing or future ones.
+
+if we want to change the color of the representation: #68
+	add { type: ..., color: "uniform", colorParams: Color(0xFFFF00) }
+if we want to change the color of residues, we need to write a specific theme #462
+	also check #1050
+if we want to have different colors, instead of changing the default selection color, use overpaint #233
+
+OVERPAINT
+overpainting range of residues #664
+overpaint NO se puede usar para cambiar opacidad con base en selecciones #149
+
+reverting color after overpaint 
+overpaint always overwrites any theme. If you want to revert that, you need to query the treee (e.g. using state.data.selectQ) and delete the nodes
+
+CUSTOM COLOR THEME VIA CustomElementProperty
+https://github.com/molstar/molstar/discussions/146
+
+EXTRACTING THEME USED BY A STRUCTURE
+	this.plugin.behaviors.interaction.click.subscribe(ev => {
+		console.log(ev.current.repr?.theme.color);
+	});
+not every theme will work with this as some themes require 3D positions of vertices (most of the default ones work on the element locations)
+
+EXAMPLES
+
+example of implementing theme provider #595
+
+Electrostatic surface potential
+https://github.com/molstar/molstar/discussions/417
+
+MORE
+How to update CustomStructureProperty value and have custom theme pick up changes #622
+
+

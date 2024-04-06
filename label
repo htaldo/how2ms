@@ -1,0 +1,19 @@
+LABEL PROVIDER #1060 #1027
+labels are the boxes with metadata appearing in the right bottom corner of the viewer
+to create custom labels, you can add your own "loci label provider", via managers.lociLabels.addProvider
+	for example, to add pLDDT scores to the labels:
+		this.plugin.managers.lociLabels.addProvider(MyProvider);
+
+		// ...
+
+		const MyProvider: LociLabelProvider = {
+			label: (loci: Loci) => {
+				if (StructureElement.Loci.is(loci)) {
+					const loc = StructureElement.Loci.getFirstLocation(loci);
+					if (!loc) return;
+					const bFactor = StructureProperties.atom.B_iso_or_equiv(loc);
+					return `pLDDT: ${bFactor}`;
+				}
+				return;
+			}
+		};

@@ -1,0 +1,12 @@
+https://stackoverflow.com/questions/20035101/why-does-my-javascript-code-receive-a-no-access-control-allow-origin-header-i
+refer to https://github.com/molstar/molstar/blob/master/docs/state/transforms.md
+
+ms-plugin.download :: Root -> String | Binary
+
+Download string or binary data from the specified URL
+Parameters
+
+    url: String (Resource URL. Must be the same domain or support CORS.)
+    label?: String
+    isBinary?: true/false (If true, download data as binary (string otherwise))
+

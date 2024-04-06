@@ -1,0 +1,3 @@
+discussion #308
+tryCreateComponentFromExpression has return type StateObjectSelector<SO.Molecule.Structure, StateTransformer<StateObject<any, StateObject<D = any, T extends StateObject.Type = StateObject.Type>.Type>, StateObject<...>, any>>
+components are managed by this.plugin.managers.structure.hierarchy (.current)

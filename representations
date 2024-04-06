@@ -1,0 +1,162 @@
+WHAT EXACTLY IS A REPRESENTATION?
+const repr = struct.components[0].representations[0].cell;
+	representations[0] is a StructureRepresentationRef
+	representations[0].cell is a StateObjectCell
+
+LIST REPRESENTATION REFS FOR A GIVEN STRUCTURE
+#557
+
+UPDATE A REPRESENTATION
+addRepresentation returns a selector, which can be used as a reference for build().update
+#404
+await plugin.build()
+	.to(selector)
+	.update(createStructureRepresentationParams(plugin, undefined, {
+		type: 'molecular-surface',
+		typeParams: { alpha: 0.5 },
+		color: 'uniform',
+		colorParams: { value: Color(0xFF0000) }
+	}))
+	.commit();
+
+
+MANAGE REPRESENTATIONS
+mol-plugin-state/builder/structure/representation
+
+in order to apply the changes, we might need to use canvas.update(representation) #941
+
+structure -> selection/query -> component -> representation
+
+FIRST create a component via plugin.builders.structure.tryCreateComponent functions #799
+	tryCreateComponent //returns undefined if the component is empty/null
+	tryCreateComponentFromExpression(structure, expression: Expression, key:string, params?)
+	tryCreateComponentStatic(structure, type, params?)
+	tryCreateComponentFromSelection(structure, selection, key, params?)
+you can create as many components as you want from the same structure (an example can be seen in superposition.ts, where s is the structure)
+
+add/change representations FROM SELECTION
+create via plugin.builders.structure.representations #799
+create via builders.structure.representation.addRepresentation() #182
+change via plugin.build().to(selector).update(createStructureRepresentationParams(...)); #134
+change/create via rep.createOrUpdate (setState gives more fine grained control, at least to adjust transparency) #911
+change via Representation.setState() #635 - adding a surface representation to a residue selection
+	setState comes from React (?), which updates a state variable
+
+OR building representation on your own: FROM DATA #68
+	const data = await this.plugin.builders.data.download({ url });
+	const trajectory = await this.plugin.builders.structure.parseTrajectory(data, format);
+	const model = await this.plugin.builders.structure.createModel(trajectory);
+	const structure = await this.plugin.builders.structure.createStructure(model);
+
+	const components = {
+		polymer: await this.plugin.builders.structure.tryCreateComponentStatic(structure, 'polymer'),
+		ligand: await this.plugin.builders.structure.tryCreateComponentStatic(structure, 'ligand'),
+		water: await this.plugin.builders.structure.tryCreateComponentStatic(structure, 'water'),
+	};
+
+	const builder = this.plugin.builders.structure.representation;
+	const update = this.plugin.build();
+	if (components.polymer) builder.buildRepresentation(update, components.polymer, { type: 'gaussian-surface', typeParams: { alpha: 0.51 } }, { tag: 'polymer' });
+	if (components.ligand) builder.buildRepresentation(update, components.ligand, { type: 'ball-and-stick' }, { tag: 'ligand' });
+	if (components.water) builder.buildRepresentation(update, components.water, { type: 'ball-and-stick', typeParams: { alpha: 0.6 } }, { tag: 'water' });
+	await update.commit();	
+
+references
+#134 in loadStructureFromData save the reference to the representation returned by the last commit, then do 
+	plugin.build().to(selector).update(createStructureRepresentationParams(...));
+#134 To get closer to the Mol* Viewer default you should pass the structure object
+	const repr = createStructureRepresentationParams(this.plugin, structure.data, props);
+
+delete representations #635
+Delete a structure's representation https://github.com/molstar/molstar/issues/688
+	builder = plugin.state.data.build()
+	builder.to(structureRef).delete(representationRef);
+
+TOGGLE REPRESENTATIONS (HIDE/UNHIDE)
+repr.setState({visible: false}); //can be undone with repr.setState({ visible })
+you can use the setSubtreeVisibility function on a node of the tree to show/hide different parts #463
+	setSubtreeVisibility(window.molstar.state.data, window.molstar.managers.structure.hierarchy.current.structures[1].components[0].cell.transform.ref, show);
+
+MOVE REPRESENTATIONS (AND UNDERLYING STRUCTURES)
+transform conformation
+transforming a volume under a rotation and translation #1055
+
+APPLYPRESET
+The applyPreset function returns a dictionary with references #985
+
+GETTING STRUCTUREREPRESENTATIONPROPS PROGRAMMATICALLY
+to retrieve representation parameters from a representation's ref
+	const repr = await viewer.plugin.builders.structure.representation.addRepresentation(structure, _options_);
+	const params = repr.cell?.transform.params;
+
+
+EXAMPLES
+
+#182
+await this.plugin.builders.structure.representation.addRepresentation(myComponent!, {
+	type: 'molecular-surface', typeParams: { alpha: 0.5 }, color: "uniform", colorParams: { value: Color(0xFF0000) }
+});
+
+
+#595
+const representations = {
+    ligand: builder.buildRepresentation(update, components.ligand, { type: 'ball-and-stick', typeParams: { ...typeParams, sizeFactor: 0.1 }, color: 'element-symbol', colorParams: { carbonColor: { name: 'element-symbol', params: {} } } }, { tag: 'ligand' }),
+    ballAndStick: builder.buildRepresentation(update, components.surroundings, { type: 'molecular-surface', typeParams: { ...typeParams, alpha: 0.44, material: CustomMaterial, sizeFactor: 0.1, sizeAspectRatio: 0.5 }, color: 'hydrophobicity', colorParams: { carbonColor: { name: 'element-symbol', params: {} } } }, { tag: 'surroundings' }),
+};
+
+tryCreateComponentStatic(structure, 'polymer')
+
+#989
+let component = await this.plugin.builders.structure.tryCreateComponentFromExpression(structure, query, 'selection_neighbors');
+await this.plugin.builders.structure.representation.addRepresentation(component!, {
+	type : 'ball-and-stick',
+	color : 'element-symbol',
+	colorParams : {
+		carbonColor: { name: 'uniform', params: {value: Color(0xff00ff)} 
+	}
+});
+
+Creating representation for a chain only #250
+We need to create the state on our own:
+import { MolScriptBuilder as MS } from 'molstar/lib/mol-script/language/builder';
+
+const data = await plugin.builders.data.download({ url: Asset.Url(url) });
+const trajectory = await plugin.builders.structure.parseTrajectory(data, format);
+const model = await plugin.builders.structure.createModel(trajectory);
+const structure = await plugin.builders.structure.createStructure(model, assemblyId ? { name: 'assembly', params: { id: assemblyId } } : void 0);
+const query = MS.struct....;
+const component = await plugin.builders.structure.tryCreateComponentFromExpression(structure, query, `Chain C` /* needs to be unique per component */);
+if (component) await plugin.builders.structure.representation.addRepresentation(component, { type: 'cartoon' });
+
+#168 How to select multiple representations by auth_sequence_id
+export function createSequenceIdExpression(
+  sequenceIds: number[],
+  chain?: string
+): Expression {
+  const query: any = {
+    "residue-test": MS.core.set.has([
+      MS.set(...sequenceIds),
+      MS.ammp("auth_seq_id"),
+    ]),
+    "group-by": MS.struct.atomProperty.macromolecular.residueKey(),
+  };
+
+  if (chain) {
+    query["chain-test"] = MS.core.rel.eq([
+      MS.struct.atomProperty.macromolecular.auth_asym_id(),
+      chain,
+    ]);
+  }
+
+  return MS.struct.generator.atomGroups(query);
+}
+
+MORE ABOUT ADDREPRESENTATION AND BUILDREPRESENTATION
+addRepresentation uses buildRepresentation
+both return a StateObjectSelector
+	the selector inclusdes objects like cell.transform.params, which has information on the parameters of the representation 
+
+ISSUES
+list representation refs for a given structure #557
+	hide topo/xtc objects in state tree #512
+ellipsoid representation #890

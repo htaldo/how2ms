@@ -1,0 +1,65 @@
+refer to https://github.com/molstar/molstar/tree/master/docs/state
+apparently, a transform takes some data and adds it to the state tree
+one of the most common use cases for transforms is loading a structure from a file, string or url
+an example can be found in #146
+
+another example #82
+export const CreateSphere = CreateTransformer({
+    name: 'create-sphere',
+    display: 'Sphere',
+    from: PluginStateObject.Root, // or whatever data source
+    to: PluginStateObject.Shape.Representation3D,
+    params: {
+        center: PD.Vec3(Vec3()),
+        radius: PD.Numeric(1)
+    }
+}) ({...});
+//then do plugin.build().toRoot().apply(CreateSphere, { ... }).commit()
+
+you can update multiple transforms at the same time like this: #134
+	const refsOrSelectors = ...;
+	const update = pluing.build();
+	for (const r of refsOrSelectors) {
+	  update.to(r).update(...);
+	}
+	await update.commit()
+
+you can transform event data #95
+
+create a transform to add frames to a trajectory form coordinates array #282
+
+you can also use transforms to parse data: #730
+	const format = plugin.build()
+		.to(data)
+		.apply(StateTransforms.Data.ParseCcp4, {}, { state: { isGhost: true } });
+	const volume = format.apply(StateTransforms.Volume.VolumeFromCcp4, { entryId: params?.entryId });
+	await format.commit({ revertOnError: true });
+
+REMOVE LOADED PDB FROM SESSION #454
+When you load the PDB file you should get a reference to the root (usually the download transform)
+You can then do something like this:
+const update = molstar.build();
+	for (const ref of roots) update.delete();
+	await update.commit();
+
+example:
+	### INIT function, e.g. in useEffect
+	const ref = await window.molstar.builders.data.download(
+		{url: `URLTOPDBFILE`},
+		{state: {isGhost: true},}
+	);
+	const trajectory =
+		await window.molstar.builders.structure.parseTrajectory(data, "pdb");
+	await window.molstar.builders.structure.hierarchy.applyPreset(
+		trajectory,
+		"default"
+	);
+
+	### FUNCTION for deleting
+	const update = molstar.build();
+	update.delete(ref); # this is the ref from above
+	await update.commit();
+
+MORE
+#443
+#431

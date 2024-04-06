@@ -1,0 +1,42 @@
+the definition for StateObjectSelector can be found at src/mol-state/object.ts
+	methods: cell, obj, data
+
+#171
+Selectors usually come from the state tree builder. It's something you store when you are initially creating your state.
+You can also select things dynamically using plugin.state.data.selectQ
+
+#664
+selectors are like jQuery for the state tree. For example:
+const myCell = plugin.state.data.selectQ(q => q.byRef(cartoonRef))[0];
+const allRepresentations = plugin.state.data.selectQ(q => q.ofType(PluginStateObject.Molecule.Structure.Representation3D));
+const allSuper = plugin.state.data.selectQ(q => q.byRef(cartoonRef).subtree().withTag('my-super-tag'));
+
+selector.cell?.transform.params #622
+
+#504
+"remember" the selector (for example, if you want to keep working with a component)
+const update = plugin.build();
+const selection = plugin.to(cell).apply(StructureSelectionFromExpression, ...).selector;
+await update.commit();
+...
+plugin.build()to(selection).update(...);
+
+MANAGE STATEOBJECTSELECTOR #171
+change visibility
+setSubtreeVisibility(plugin.state.data, selector.ref, true /* or false */);
+
+highlight
+PluginCommands.Interactivity.Object.Highlight(plugin, { state: plugin.state.data, ref: [sel1.ref, sel2.ref] /* or just sel1.ref if only 1 object */ });
+PluginCommands.Interactivity.ClearHighlights(plugin)
+
+color
+note that you can only have one highlight color at a time. To have different colors, you can use overpaint or themes
+	this would have to be done using different themes for each object and calling plugin.build().to(selector).update({ newParams }).commit();
+	multiple to/update pairs can be added to a single state build
+
+focus
+any of plugin.managers.camera.focus*(...) functions depending on the kind of object functions depending on the kind of object
+
+EXTRA
+a list of StateObjectSelector can be saved from CreateTransformer #171
+

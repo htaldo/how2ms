@@ -1,0 +1,9 @@
+#635
+When creating geometry (mesh, spheres, lines, ...) you assign a group to a vertex, sphere, line... when creating a visual you provide functions that map those groups to locations and loci
+
+DRAW A TORUS #913
+DRAW A SPHERE
+CREATE SPHERES, DO HIGHLIGHTS, CREATE CLIPPING OBJECTS #82
+SET RADIUS WHEN DRAWING A BALL #914
+DRAW SPHERE WITH ARROW #908
+DRAW TRANSPARENT BALL #911

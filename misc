@@ -1,0 +1,38 @@
+CUSTOM INTERACTIONS DEFINITION AND VISUALIZATION #979
+
+POSITION OF RESIDUE WHEN HOVERING
+this.plugin.behaviors.interaction.hover.subscribe(ev => {
+    if (StructureElement.Loci.is(ev.current.loci)) {
+        const l = StructureElement.Loci.getFirstLocation(ev.current.loci);
+        if (l) {
+            const seq_id = StructureProperties.residue.label_seq_id(l);
+        }
+    }
+});
+You can use StructureElement.Loci.forEachLocation() to iterate over all the hovered locations too.
+
+INTERACTIONS BETWEEN MOLECULES FROM DIFFERENT SOURCES #81
+create a structure object based on multiple models. In this case the interaction should be computed automatically
+	use the StructureFromTrajectory transform while creating a signle trajectory from multiple models
+		https://github.com/molstar/molstar/blob/master/src/mol-plugin-state/actions/structure.ts#L138
+		(or write a custom transform that composes multiple models)
+	then there is a special "interactions visual"
+OR
+write a custom visual that takes the structures as input
+
+SUBSCRIBING TO REPRESENTATION CHANGES
+#81
+subscribe to plugin.state.data.events.changed and access the desired objects through refs or selectors
+OR
+subscribe to plugin.managers.structure.hierarchy.behaviors.selection which gives you an object with the hierarchy and current trajectory/model/structure selection
+
+EXTRACTING AN ATOM'S CHARGE #585
+
+COLOR SELECTION IN SEQUENCE PANEL #233
+
+DIFFERENCE BETWEEN ASSEMBLY AND ASYMMETRIC UNITS (MODEL) #970
+
+
+
+
+const CreateTransformer = StateTransformer.builderFactory('custom');

@@ -1,0 +1,19 @@
+THE UPDATE PATTERN
+
+build,update,to, apply, commit
+	pluing.build().to(selector).update(createStructureRepresentationParams(...));
+const update = plugin.build() or plugin.state.build()
+update
+	.toRoot()
+	.to(selection, selector, structure, repr, transform, cell)
+		.apply //apply a transform, can be done on another apply #209, and the transform can be a custom one made via CreateTransformer
+		.group
+		.update (?)
+			.commit
+await update.commit();
+---
+you can finish a function with return update.commit(); #149
+when/why can update be a function argument? like in #264
+	update: StateBuilder.To<any, any>
+#664 may be of help
+

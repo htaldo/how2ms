@@ -1,0 +1,6 @@
+#239
+Plugin, PluginContext, PluginSpec can be used without react. It is to be read as something you can plug into your own project.
+
+PluginUIContext and PluginUISpec depend on react.
+
+Viewer is an app build using the above objects. It is not really meant to be extended but it can serve as an example of how to setup your own custom viewer. You can also look at https://www.npmjs.com/package/@rcsb/rcsb-molstar (@JonStargaryen can the repo be made public too?) and https://github.com/PDBeurope/pdbe-molstar and https://github.com/reuter-group/peprmint-web as examples of how to create custom apps. We unfortunately don't have much documentation apart from the excuse "the code is the documentation". Everything that is exposed in the PluginContext is certainly intended to be used. The https://github.com/molstar/molstar/tree/master/src/extensions directory has more hints on how to extend molstar. A common pattern is that you define behaviors, transforms, themes and then register them with the plugin context.

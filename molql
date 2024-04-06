@@ -1,0 +1,208 @@
+MOLQL SELECTIONS
+import { Script } from '../../mol-script/script';
+import { MolScriptBuilder as MS } from '../language/builder';
+import { StructureSelectionQuery, StructureSelectionCategory } from '../../mol-plugin-state/helpers/structure-selection-query';
+
+selections can be turned into queries, which remember atom ids, chains, etc #461
+
+WORKFLOW
+Script.getStructureSelection
+	the selection expression can be made in 2 ways
+		Q => Q.struct.generator*
+		MS.struct.generator.*
+			in this approach it seems common to assign the whole thing to an expression variable
+	the selection can be assigned to a variable (for example, sel)
+The selection can be assigned to a loci
+	const loci = StructureSelection.toLociWithSourceUnits(sel);
+
+TESTS WITH *.struct.generator.atomGroups
+'atom-test'
+'residue-test'
+'chain-test'
+'entity-test'
+	this one can be used to query against waters:
+		const waters = MS.struct.generator.atomGroups({
+					'entity-test': MS.core.rel.eq([MS.struct.atomProperty.macromolecular.entityType(), 'water']),
+'group-by'
+
+OTHER ELEMENTS OF *.struct.generator
+all
+queryInSelection()
+empty()
+
+MORE SYMBOLS
+ammp: atom macromolecular property
+MS.core.set.has : Check if the 1st argument includes the value of the 2nd
+isSubset: Check if the 1st argument is a subset of the 2nd
+
+EXAMPLES
+selecting (programmatically) just one chain, molQL?
+https://github.com/molstar/molstar/issues/250
+	you have to build your own custom state
+	import { MolScriptBuilder as MS } from 'molstar/lib/mol-script/language/builder';
+
+	const data = await plugin.builders.data.download({ url: Asset.Url(url) });
+	const trajectory = await plugin.builders.structure.parseTrajectory(data, format);
+	const model = await plugin.builders.structure.createModel(trajectory);
+	const structure = await plugin.builders.structure.createStructure(model, assemblyId ? { name: 'assembly', params: { id: assemblyId } } : void 0);
+	const query = MS.struct....;
+	const component = await plugin.builders.structure.tryCreateComponentFromExpression(structure, query, `Chain C` /* needs to be unique per component */);
+	if (component) await plugin.builders.structure.representation.addRepresentation(component, { type: 'cartoon' });
+
+in the definition given in https://molstar.org/docs/viewer-state/
+	const selection = Script.getStructureSelection(Q => Q.struct.generator.atomGroups({
+    	'chain-test': Q.core.rel.eq(['B', Q.ammp('label_asym_id')])
+	}), data);
+the same can be achieved with molQL script:
+	(sel.atom.atom-groups
+	  :chain-test (= atom.label_asym_id B))
+which, compiled to molQL gives
+	(structure.generator.atom-groups
+  :chain-test (core.rel.eq
+    (structure.atom-property.macromolecular.label_asym_id)
+    B))
+
+how to visualize particular chain?
+hints at the use of molscript-molQL to select chains
+(sel.atom.atom-groups :atom-test (= atom.chain A))
+
+How can I programmatically select multiple atoms at once?
+https://github.com/molstar/molstar/issues/822
+ejemplo de selección de varios átomos
+const nosBridges = StructureSelectionQuery('NOS Bridges', MS.struct.modifier.union([
+    MS.struct.modifier.wholeResidues([
+        MS.struct.filter.isConnectedTo({
+            0: MS.struct.generator.atomGroups({
+                'residue-test': MS.core.set.has([MS.set('CSO', 'LYS'), MS.ammp('auth_comp_id')]),
+                'atom-test': MS.core.set.has([MS.set('OD', 'NZ'), MS.ammp('label_atom_id')])
+            }),
+            target: MS.struct.generator.atomGroups({
+                'residue-test': MS.core.set.has([MS.set('CSO', 'LYS'), MS.ammp('auth_comp_id')]),
+                'atom-test': MS.core.set.has([MS.set('OD', 'NZ'), MS.ammp('label_atom_id')])
+            }),
+            'bond-test': true
+        })
+    ])
+]), { category: StructureSelectionCategory.Bond });
+
+Selection of residues #799
+const structureData = window.molstar.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data;
+const sel = Script.getStructureSelection(Q => Q.struct.generator.atomGroups({
+    "residue-test": MS.core.set.has([
+        MS.set(...selected_residues),
+        MS.ammp("auth_seq_id"),
+    ]),
+    'group-by': Q.struct.atomProperty.macromolecular.residueKey()
+}), structureData)
+
+#168
+Selecting a single residue
+	const expr = MS.struct.generator.atomGroups({
+		  "residue-test": MS.core.rel.eq([
+			  MS.struct.atomProperty.macromolecular.auth_seq_id(),
+			  557, // or any other auth seq id
+		  ]),
+	})
+
+	const sel = Script.getStructureSelection(expr, root);
+
+	const loci = StructureSelection.toLociWithSourceUnits(sel);
+
+Selecting multiple residues
+	MS.struct.generator.atomGroups({
+		'residue-test': MS.core.set.has([MS.set([556, 558, 557]), MS.ammp('auth_seq_id')])
+	})
+
+Create an EXPRESSION to select multiple residues by auth_sequence_id and chain
+	export function createSequenceIdExpression(
+	  sequenceIds: number[],
+	  chain?: string
+	): Expression {
+	  const query: any = {
+		"residue-test": MS.core.set.has([
+		  MS.set(...sequenceIds),
+		  MS.ammp("auth_seq_id"),
+		]),
+		"group-by": MS.struct.atomProperty.macromolecular.residueKey(),
+	  };
+
+	  if (chain) {
+		query["chain-test"] = MS.core.rel.eq([
+		  MS.struct.atomProperty.macromolecular.auth_asym_id(),
+		  chain,
+		]);
+	  }
+
+	  return MS.struct.generator.atomGroups(query);
+	}
+
+using molQL to define selections
+https://github.com/molstar/molstar/issues/149
+
+Example given by dsenhal (protopedia-wrapper/index.ts)
+hetGroups = {
+        reset: () => {
+            const update = this.state.build().delete(StateElements.HetGroupFocusGroup);
+            PluginCommands.State.Update(this.plugin, { state: this.state, tree: update });
+            PluginCommands.Camera.Reset(this.plugin, {});
+        },
+        focusFirst: async (compId: string, options?: { hideLabels: boolean, doNotLabelWaters: boolean }) => {
+            if (!this.state.transforms.has(StateElements.Assembly)) return;
+            await PluginCommands.Camera.Reset(this.plugin, {});
+
+            const update = this.state.build();
+
+            update.delete(StateElements.HetGroupFocusGroup);
+
+            const core = MS.struct.filter.first([
+                MS.struct.generator.atomGroups({
+                    'residue-test': MS.core.rel.eq([MS.struct.atomProperty.macromolecular.label_comp_id(), compId]),
+                    'group-by': MS.core.str.concat([MS.struct.atomProperty.core.operatorName(), MS.struct.atomProperty.macromolecular.residueKey()])
+                })
+            ]);
+            const surroundings = MS.struct.modifier.includeSurroundings({ 0: core, radius: 5, 'as-whole-residues': true });
+
+            const group = update.to(StateElements.Assembly).group(StateTransforms.Misc.CreateGroup, { label: compId }, { ref: StateElements.HetGroupFocusGroup });
+            const asm = this.state.select(StateElements.Assembly)[0].obj as PluginStateObject.Molecule.Structure;
+            const coreSel = group.apply(StateTransforms.Model.StructureSelectionFromExpression, { label: 'Core', expression: core }, { ref: StateElements.HetGroupFocus });
+
+
+            coreSel.apply(StateTransforms.Representation.StructureRepresentation3D, createStructureRepresentationParams(this.plugin, asm.data, {
+                type: 'ball-and-stick'
+            }));
+            coreSel.apply(StateTransforms.Representation.StructureRepresentation3D, createStructureRepresentationParams(this.plugin, asm.data, {
+                type: 'label',
+                typeParams: { level: 'element' }
+            }), { tags: ['proteopedia-labels'] });
+
+            group.apply(StateTransforms.Model.StructureSelectionFromExpression, { label: 'Surroundings', expression: surroundings })
+                .apply(StateTransforms.Representation.StructureRepresentation3D, createStructureRepresentationParams(this.plugin, asm.data, {
+                    type: 'ball-and-stick',
+                    color: 'uniform', colorParams: { value: ColorNames.gray },
+                    size: 'uniform', sizeParams: { value: 0.33 }
+                }));
+
+            if (!options?.hideLabels) {
+                // Labels
+                const waters = MS.struct.generator.atomGroups({
+                    'entity-test': MS.core.rel.eq([MS.struct.atomProperty.macromolecular.entityType(), 'water']),
+                });
+                const exclude = options?.doNotLabelWaters ? MS.struct.combinator.merge([core, waters]) : core;
+                const onlySurroundings = MS.struct.modifier.exceptBy({ 0: surroundings, by: exclude });
+
+                group.apply(StateTransforms.Model.StructureSelectionFromExpression, { label: 'Surroundings (only)', expression: onlySurroundings })
+                    .apply(StateTransforms.Representation.StructureRepresentation3D, createStructureRepresentationParams(this.plugin, asm.data, {
+                        type: 'label',
+                        typeParams: { level: 'residue' }
+                    }), { tags: ['proteopedia-labels'] }); // the tag can later be used to toggle the labels
+            }
+
+            await PluginCommands.State.Update(this.plugin, { state: this.state, tree: update });
+
+            const focus = (this.state.select(StateElements.HetGroupFocus)[0].obj as PluginStateObject.Molecule.Structure).data;
+            const sphere = focus.boundary.sphere;
+            const radius = Math.max(sphere.radius, 5);
+            const snapshot = this.plugin.canvas3d!.camera.getFocus(sphere.center, radius);
+            PluginCommands.Camera.SetSnapshot(this.plugin, { snapshot, durationMs: 250 });
+        }
+    };

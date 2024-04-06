@@ -1,0 +1,260 @@
+LOADING STRUCTURES
+from https://molstar.org/docs/transforms/custom-trajectory/
+	using a custom transformer to process the data:
+		const data: CustomTrajectoryData = await (await fetch(url)).json();
+		const trajectory = await plugin.build().toRoot().apply(TrajectoryFromCustomData, { data }).commit();
+		// Create the representation
+		await plugin.builders.structure.hierarchy.applyPreset(trajectory, 'default');
+
+NOTE:
+Unfortunately, loading the structure using loadStructureFrom* makes it kind of hard to customize the loaded data by code. #131
+(#388)loadStructureFromUrl is a promise. If you call two of these at the same time, there might be some conflict in the app state.
+	Instead, load one after the other like this:
+		async function loadAll(plugin, urls) {
+  			for (const url of urls) await plugin.loadStructureFromUrl(url);
+		}
+(#388) on the backend, you can't change the name of the loaded structure using the PDB format (with mmCIF you could assign entry.id category)
+
+in app.ts: 
+	mol-plugin-state/actions/structure/DownloadStructure
+	loadStructureFromUrl(url: string, format: BuiltInTrajectoryFormat = 'mmcif', isBinary = false, options?: LoadStructureOptions & { label?: string }) {
+		const params = DownloadStructure.createDefaultParams(this.plugin.state.data.root.obj!, this.plugin);
+		return this.plugin.runTask(this.plugin.state.data.applyAction(DownloadStructure, {
+			source: {
+				name: 'url',
+				params: {
+					url: Asset.Url(url),
+					format: format as any,
+					isBinary,
+					label: options?.label,
+					options: { ...params.source.params.options, representationParams: options?.representationParams as any },
+				}
+			}
+		}));
+	}
+
+	EXAMPLES
+	loadStructureFromUrl(`http://localhost:3000/api/pivot/gene/pdb-file/${pdbFileName}`, 'pdb' );
+	viewer.loadStructureFromUrl('pathtomystructure', 'pdb', false, { representationParams: {theme: { carbonColor: 'element-symbol' }}})
+	
+
+	async loadAllModelsOrAssemblyFromUrl(url: string, format: BuiltInTrajectoryFormat = 'mmcif', isBinary = false, options?: LoadStructureOptions) {
+        const plugin = this.plugin;
+
+        const data = await plugin.builders.data.download({ url, isBinary }, { state: { isGhost: true } });
+        const trajectory = await plugin.builders.structure.parseTrajectory(data, format);
+
+        await this.plugin.builders.structure.hierarchy.applyPreset(trajectory, 'all-models', { useDefaultIfSingleModel: true, representationPresetParams: options?.representationParams });
+    }
+
+    async loadStructureFromData(data: string | number[], format: BuiltInTrajectoryFormat, options?: { dataLabel?: string }) {
+        const _data = await this.plugin.builders.data.rawData({ data, label: options?.dataLabel });
+        const trajectory = await this.plugin.builders.structure.parseTrajectory(_data, format);
+        await this.plugin.builders.structure.hierarchy.applyPreset(trajectory, 'default');
+    }
+
+    loadPdb(pdb: string, options?: LoadStructureOptions) {
+        const params = DownloadStructure.createDefaultParams(this.plugin.state.data.root.obj!, this.plugin);
+        const provider = this.plugin.config.get(PluginConfig.Download.DefaultPdbProvider)!;
+        return this.plugin.runTask(this.plugin.state.data.applyAction(DownloadStructure, {
+            source: {
+                name: 'pdb' as const,
+                params: {
+                    provider: {
+                        id: pdb,
+                        server: {
+                            name: provider,
+                            params: PdbDownloadProvider[provider].defaultValue as any
+                        }
+                    },
+                    options: { ...params.source.params.options, representationParams: options?.representationParams as any },
+                }
+            }
+        }));
+    }
+
+in basic-wrapper/index.ts:
+	async load({ url, format = 'mmcif', isBinary = false, assemblyId = '' }: LoadParams) {
+        await this.plugin.clear();
+
+        const data = await this.plugin.builders.data.download({ url: Asset.Url(url), isBinary }, { state: { isGhost: true } });
+        const trajectory = await this.plugin.builders.structure.parseTrajectory(data, format);
+
+        await this.plugin.builders.structure.hierarchy.applyPreset(trajectory, 'default', {
+            structure: assemblyId ? {
+                name: 'assembly',
+                params: { id: assemblyId }
+            } : {
+                name: 'model',
+                params: {}
+            },
+            showUnitcell: false,
+            representationPreset: 'auto'
+        });
+    }
+
+
+definition of DownloadStructure (mol-plugin-state/actions/structure.ts)
+	export { DownloadStructure };
+	type DownloadStructure = typeof DownloadStructure
+	const DownloadStructure = StateAction.build({
+		from: PluginStateObject.Root,
+		display: { name: 'Download Structure', description: 'Load a structure from the provided source and create its representation.' },
+		params: (_, plugin: PluginContext) => {
+			const options = DownloadModelRepresentationOptions(plugin);
+			const defaultPdbProvider = plugin.config.get(PluginConfig.Download.DefaultPdbProvider) || 'pdbe';
+			return {
+				source: PD.MappedStatic('pdb', {
+					'pdb': PD.Group({
+						provider: PD.Group({
+							id: PD.Text('1tqn', { label: 'PDB Id(s)', description: 'One or more comma/space separated PDB ids.' }),
+							server: PD.MappedStatic(defaultPdbProvider, PdbDownloadProvider),
+						}, { pivot: 'id' }),
+						options
+					}, { isFlat: true, label: 'PDB' }),
+					'pdb-dev': PD.Group({
+						provider: PD.Group({
+							id: PD.Text('PDBDEV_00000001', { label: 'PDB-Dev Id(s)', description: 'One or more comma/space separated ids.' }),
+							encoding: PD.Select('bcif', PD.arrayToOptions(['cif', 'bcif'] as const)),
+						}, { pivot: 'id' }),
+						options
+					}, { isFlat: true, label: 'PDB-Dev' }),
+					'swissmodel': PD.Group({
+						id: PD.Text('Q9Y2I8', { label: 'UniProtKB AC(s)', description: 'One or more comma/space separated ACs.' }),
+						options
+					}, { isFlat: true, label: 'SWISS-MODEL', description: 'Loads the best homology model or experimental structure' }),
+					'alphafolddb': PD.Group({
+						id: PD.Text('Q8W3K0', { label: 'UniProtKB AC(s)', description: 'One or more comma/space separated ACs.' }),
+						options
+					}, { isFlat: true, label: 'AlphaFold DB', description: 'Loads the predicted model if available' }),
+					'modelarchive': PD.Group({
+						id: PD.Text('ma-bak-cepc-0003', { label: 'Accession Code(s)', description: 'One or more comma/space separated ACs.' }),
+						options
+					}, { isFlat: true, label: 'Model Archive' }),
+					'pubchem': PD.Group({
+						id: PD.Text('2244,2245', { label: 'PubChem ID', description: 'One or more comma/space separated IDs.' }),
+						options
+					}, { isFlat: true, label: 'PubChem', description: 'Loads 3D conformer from PubChem.' }),
+					'url': PD.Group({
+						url: PD.Url(''),
+						format: PD.Select<BuiltInTrajectoryFormat>('mmcif', PD.arrayToOptions(BuiltInTrajectoryFormats.map(f => f[0]), f => f)),
+						isBinary: PD.Boolean(false),
+						label: PD.Optional(PD.Text('')),
+						options
+					}, { isFlat: true, label: 'URL' })
+				})
+			};
+		}
+	})(({ params, state }, plugin: PluginContext) => Task.create('Download Structure', async ctx => {
+		plugin.behaviors.layout.leftPanelTabName.next('data');
+
+		const src = params.source;
+		let downloadParams: StateTransformer.Params<Download>[];
+		let asTrajectory = false, format: BuiltInTrajectoryFormat | 'auto' = 'mmcif';
+
+		switch (src.name) {
+			case 'url':
+				downloadParams = [{ url: src.params.url, isBinary: src.params.isBinary, label: src.params.label || undefined }];
+				format = src.params.format;
+				break;
+			case 'pdb':
+				downloadParams = await (
+					src.params.provider.server.name === 'pdbe'
+						? getPdbeDownloadParams(src)
+						: src.params.provider.server.name === 'pdbj'
+							? getPdbjDownloadParams(src)
+							: src.params.provider.server.name === 'rcsb'
+								? getRcsbDownloadParams(src)
+								: assertUnreachable(src as never)
+				);
+				asTrajectory = !!src.params.options.asTrajectory;
+				break;
+			case 'pdb-dev':
+				downloadParams = await getDownloadParams(src.params.provider.id,
+					id => {
+						const nId = id.toUpperCase().startsWith('PDBDEV_') ? id : `PDBDEV_${id.padStart(8, '0')}`;
+						return src.params.provider.encoding === 'bcif'
+							? `https://pdb-dev.wwpdb.org/bcif/${nId.toUpperCase()}.bcif`
+							: `https://pdb-dev.wwpdb.org/cif/${nId.toUpperCase()}.cif`;
+					},
+					id => id.toUpperCase().startsWith('PDBDEV_') ? id : `PDBDEV_${id.padStart(8, '0')}`,
+					src.params.provider.encoding === 'bcif'
+				);
+				asTrajectory = !!src.params.options.asTrajectory;
+				break;
+			case 'swissmodel':
+				downloadParams = await getDownloadParams(src.params.id, id => `https://swissmodel.expasy.org/repository/uniprot/${id.toUpperCase()}.pdb`, id => `SWISS-MODEL: ${id}`, false);
+				asTrajectory = !!src.params.options.asTrajectory;
+				format = 'pdb';
+				break;
+			case 'alphafolddb':
+				downloadParams = await getDownloadParams(src.params.id, async id => {
+					const url = `https://www.alphafold.ebi.ac.uk/api/prediction/${id.toUpperCase()}`;
+					const info = await plugin.runTask(plugin.fetch({ url, type: 'json' }));
+					if (Array.isArray(info) && info.length > 0) return info[0].cifUrl;
+					throw new Error(`No AlphaFold DB entry for '${id}'`);
+				}, id => `AlphaFold DB: ${id}`, false);
+				asTrajectory = !!src.params.options.asTrajectory;
+				format = 'mmcif';
+				break;
+			case 'modelarchive':
+				downloadParams = await getDownloadParams(src.params.id, id => `https://www.modelarchive.org/doi/10.5452/${id.toLowerCase()}.cif`, id => `Model Archive: ${id}`, false);
+				asTrajectory = !!src.params.options.asTrajectory;
+				format = 'mmcif';
+				break;
+			case 'pubchem':
+				downloadParams = await getDownloadParams(src.params.id, id => `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/${id.trim()}/record/SDF/?record_type=3d`, id => `PubChem: ${id}`, false);
+				asTrajectory = !!src.params.options.asTrajectory;
+				format = 'mol';
+				break;
+			default: assertUnreachable(src);
+		}
+
+		const representationPreset: any = params.source.params.options.representation || plugin.config.get(PluginConfig.Structure.DefaultRepresentationPreset) || PresetStructureRepresentations.auto.id;
+		const showUnitcell = representationPreset !== PresetStructureRepresentations.empty.id;
+
+		const structure = src.params.options.type.name === 'auto' ? void 0 : src.params.options.type;
+
+		await state.transaction(async () => {
+			if (downloadParams.length > 0 && asTrajectory) {
+				const blob = await plugin.builders.data.downloadBlob({
+					sources: downloadParams.map((src, i) => ({ id: '' + i, url: src.url, isBinary: src.isBinary })),
+					maxConcurrency: 6
+				}, { state: { isGhost: true } });
+				const trajectory = await plugin.builders.structure.parseTrajectory(blob, { formats: downloadParams.map((_, i) => ({ id: '' + i, format: 'cif' as 'cif' })) });
+
+				await plugin.builders.structure.hierarchy.applyPreset(trajectory, 'default', {
+					structure,
+					showUnitcell,
+					representationPreset,
+					representationPresetParams: params.source.params.options.representationParams
+				});
+			} else {
+				for (const download of downloadParams) {
+					const data = await plugin.builders.data.download(download, { state: { isGhost: true } });
+					const provider = format === 'auto'
+						? plugin.dataFormats.auto(getFileNameInfo(Asset.getUrl(download.url)), data.cell?.obj!)
+						: plugin.dataFormats.get(format);
+					if (!provider) throw new Error('unknown file format');
+					const trajectory = await plugin.builders.structure.parseTrajectory(data, provider);
+
+					await plugin.builders.structure.hierarchy.applyPreset(trajectory, 'default', {
+						structure,
+						showUnitcell,
+						representationPreset,
+						representationPresetParams: params.source.params.options.representationParams
+					});
+				}
+			}
+		}).runInContext(ctx);
+	}));
+
+from #37
+	Mol* can also load data from string:
+		const data = await plugin.builders.data.rawData({
+			data: '' /* string or number[] */,
+			label: void 0 /* optional label */
+		});
+		const trajectory = await plugin.builders.structure.parseTrajectory(data, format);
+		await plugin.builders.structure.hierarchy.applyPreset(trajectory, 'default');
+	loadStructureFromData is also available in the Viewer object

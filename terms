@@ -1,0 +1,7 @@
+Q: query
+ctx: (plugin) context
+loc: location (StructureElement.Location)
+repr: ?
+mvs: MolViewSpec (docs/docs/extensions/mvs/index.md)
+builder: plugin.builders.*
+update: plugin.build()

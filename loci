@@ -1,0 +1,65 @@
+LOCI
+loci: a collection of objects that can be created by a selection
+	a loci can point to other things than atoms #350
+	a loci can be used to trigger custom Behaviors using the interactivity interface of the plugin
+
+LOCATIONS 
+often abbreviated as loc in code
+	loc: StructureElement.Location
+	const loc = StructureElement.Location.create(struct)
+more specifically, a loci is a set of locations, which can be iterated over with StructureElement.Loci.forEachLocation() #888
+you can convert a single loci to location with Loci.getFirstLocation #690
+
+CONVERT SELECTION TO LOCI (StructureSelection.toLociWithSourceUnits)
+For example, you can execute a query with Script.getStructureSelection and convert it to loci with StructureSelection.toLociWithSourceUnits
+Another example #313
+	const query = molstar.StructureSelectionQuery('Query', atomExpression(_atomId));
+	query.getSelection(_plugin, context, structure)
+		.then((selection) => {
+			const loci = molstar.StructureSelection.toLociWithSourceUnits(selection);
+			//further processing
+		});
+
+CLONING LOCI #460
+loci are immmutable, so there should be no need to clone them
+
+APPLY TRANSPARENCY TO LOCI #970
+https://github.com/molstar/molstar/blob/master/src/mol-plugin-state/manager/structure/component.ts#L403
+to get the refs of structure(s) to apply that to, you can
+	remember the ref when you create your state
+	use plugin.state.data.selectQ
+	use plugin.managers.structure.hierarchy
+
+FOCUS LOCI PROGRAMMATICALLY #570
+	const data = this.plugin.managers.structure.hierarchy.current.structures[1]?.cell.obj?.data;
+	const ligandLoci = Structure.toStructureElementLoci(data as any)
+
+	this.plugin.managers.camera.focusLoci(ligandLoci)
+	this.plugin.managers.interactivity.lociHighlights.highlightOnly({ loci: ligandLoci });
+	this.plugin.managers.interactivity.lociSelects.select({ loci: ligandLoci });
+
+you can use plugin.managers.structure.focus.setFromLoci #410
+	to get the loci of a representation, find the parent structure of that representation and convert it to the loci
+		this can be done with .selectQ on the plugin.state.data
+
+GET LOCI OF MISSING RESIDUES #1009
+the loci for unobserved residues are not implemented at all
+	a more general sequence loci is on the works
+
+LOCI.REMAP, LOCI.UNION #461
+
+EXAMPLES
+#347
+highlightInViewer(seq_id: string) {
+    const data = this.plugin.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data;
+    if (!data) return;
+
+    const sel = Script.getStructureSelection(Q => Q.struct.generator.atomGroups({
+        'residue-test': Q.core.rel.eq([Q.struct.atomProperty.macromolecular.label_seq_id(), seq_id]),
+        'group-by': Q.struct.atomProperty.macromolecular.residueKey()
+    }), data);
+    let loci = StructureSelection.toLociWithSourceUnits(sel);
+    loci = StructureElement.Loci.firstResidue(loci);
+    this.plugin.managers.interactivity.lociHighlights.highlightOnly({ loci });
+    this.plugin.managers.camera.focusLoci(loci);
+}

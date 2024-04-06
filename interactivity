@@ -1,0 +1,14 @@
+behavior: highlight, select
+focus: the focus representation shows a Loci in ball-and-stick representation and, additionally, visualizes non-covaent	interactions between atoms of the Loci as well as interactions with surrounding residues (default: 5A)
+zoom can be applied to loci too
+neither focus nor zoom are elements of interactivity
+
+molstar behavior (mouse etc)
+https://github.com/molstar/molstar/blob/master/src/mol-plugin/spec.ts#L120
+	plugin.behaviors.interaction
+		click
+		drag
+		hover
+		key
+		keyReleased
+		selectionMode?

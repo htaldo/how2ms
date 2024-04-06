@@ -1,0 +1,8 @@
+HIERARCHY PRESET #970
+The hierarchy preset loads the model and structure, so there's no need to do it manually
+
+REPRESENTATION PRESET #970
+if you already loaded the model via the preset, you can just use the representation preset(?)
+	this.plugin.builders.structure.representation.applyPreset(structure, ...)
+
+more about presets in loadstructures

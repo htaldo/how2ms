@@ -1,0 +1,56 @@
+granularity definitions can be found at loci.ts:
+	const Granularity = {
+        'element': (loci: Loci) => loci,
+        'residue': (loci: Loci) => {
+            return StructureElement.Loci.is(loci)
+                ? StructureElement.Loci.extendToWholeResidues(loci, true)
+                : loci;
+        },
+        'chain': (loci: Loci) => {
+            return StructureElement.Loci.is(loci)
+                ? StructureElement.Loci.extendToWholeChains(loci)
+                : loci;
+	...
+
+the granularity value can be changed programmatically via
+	this.plugin.managers.interactivity.setProps({granularity: "x"});
+
+en selection.tsx salen definiciones de highlight
+
+
+msp-form-control es donde se ven los tipos de selección, y es parte de msp-selection-viewport-controls
+	ambos se pueden encontrar en selection.tsx
+
+en selection.tsx aparece setGranularity, que usa setProps y afecta a un PureSelectControl
+	PureSelectControl está en div className="msp-flex-row"
+	msp-flex-row es parte de msp-selection-viewport-controls
+	¿Cuál es la relación entre PureSelectControl y msp-form-control?
+	PureSelectControl toma StructureSelectionParams.granularity
+	PureSelectControl aparece junto con más botones definidos justo abajo
+		(set, instersect, etc)
+
+la definición de PureSelectControl se encuentra en controls/parameters.tsx
+	Ya no fue necesario bajar hasta ese nivel
+
+
+
+QUITAR LOS BOTONES DE ARRIBA
+Hiding Right Panel and structure colour
+https://github.com/molstar/molstar/issues/278
+can I programmatically switch off the side-bar tools?
+https://github.com/molstar/molstar/issues/491
+en mol-plugin-ui está la clase SelectorViewPortControls
+	Si viewer.plugin.selectionMode
+		se devuelve la div donde están los botones (msp-selection-viewport-controls)
+	entonces tenemos que ver la forma de cargar el viewer con modo de selección activado, pero sin la div
+En viewer/app.ts están todas las opciones de configuración como layoutIsExpanded
+	creí que aquí habría algo para quitar esos botones, pero no
+quizás selection.tsx tenga algo con selectionMode. Cuando sea true, debe realizar ciertas acciones que componen el modo de selección, de modo que podamos invocar directamente esas acciones y rodeemos la creación del div
+	no sé si sea legal, porque estaríamos teniendo el modo de selección sin activar el booleano
+		ilegal o no, nos sirve
+en selection.tsx está _toggleSelMode
+parece que hay relación con behaviors o behaviors.interaction
+
+DETECTAR SELECCIÓN DE CADENAS
+s = viewer.plugin.managers.structure.hierarchy.selection.structures[0]
+sel = viewer.plugin.managers.structure.selection.getStructure(s)
