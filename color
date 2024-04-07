@@ -28,6 +28,8 @@ EXTRACTING THEME USED BY A STRUCTURE
 	});
 not every theme will work with this as some themes require 3D positions of vertices (most of the default ones work on the element locations)
 
+CHANGE THE COLOR SCALE FOR UNCERTAINTY THEME #1060
+
 EXAMPLES
 
 example of implementing theme provider #595

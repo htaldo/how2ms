@@ -1,8 +1,42 @@
-HIERARCHY PRESET #970
-The hierarchy preset loads the model and structure, so there's no need to do it manually
+both hierarchy-preset and representation preset-can be found on mol-plugin-state/builder/structure/hierarchy-preset.ts
+
+the (hierarchy) applyPreset function returns a dictionary with references #985
+
+DEFAULT REPRESENTATION PRESET #1033
+DefaultRepresentationPreset
+In this preset, water is added by default. If you want to skip waters by default, you'll have to write your own custom preset #477
+
+ALL-MODELS #1033
+preset-trajectory-all-models loads representations for all models from a file with the nav buttons
+
+HIERARCHY PRESET
+The hierarchy preset loads the model and structure, so there's no need to do it manually #970
+
+	TRAJECTORY PRESET
+	to apply a trajectory preset, you might want to use "default" instead of "all-models", since "all models" will add every single model of the trajectory to the state tree, instead of having just one model for the whole trajectory #282
+		await plugin.builders.structure.hierarchy.applyPreset(trajectory, 'default');
+	
 
 REPRESENTATION PRESET #970
 if you already loaded the model via the preset, you can just use the representation preset(?)
 	this.plugin.builders.structure.representation.applyPreset(structure, ...)
 
+	PLDDT PRESET
+	pLDDT is a representation preset, not a hierarchy preset, so it is invoked as follows #925
+		await plugin.builders.structure.representation.applyPreset(struct, QualityAssessmentPLDDTPreset.id as any);
+
+	POLYMER AND LIGAND
+	the polymerAndLigand preset is an example of how the state tree is built by default for PDB files #1050
+
+	STRUCTURE PROPERTIES PRESET #144
+
+DEFINING A PRESET
+presets can be defined via the StructureRepresentationPresetProvider class (for representation presets)
+
+	
+EXAMPLES
+docking-viewer/viewport.tsx
+
+EXTRA
 more about presets in loadstructures
+ViewerAutoPreset is registered before the UI renders. Otherwise the structure representation won't be automatically update after download #978

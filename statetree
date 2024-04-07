@@ -1,12 +1,11 @@
+STATE AND THE STATE TREE
 refer to https://github.com/molstar/molstar/tree/master/docs/state
 
+in general, the state is built through plugin.build() and applying a series of transformations and updates. This is what creates the "JSON" description of the state which is the "reconciled" similar to how react works when updating the DOM #144
+
+SNAPSHOT
+
 The state tree was designed around the idea that the information needed (to update a node?) is contained in the props of a node and it uses react-like state reconciliation to update what is rendered.  #622
-
-#82
-If you want custom visuals, you need to create a custom Representation that builds it and then a Transform, that adds it to the state tree.
-
-#512
-example on how to build the state tree
 
 SELECTQ AND HIERARCHY
 You can query the state with plugin.state.data.selectQ. Maybe plugin.managers.structure.hierarchy.current/selection can help too. #454
@@ -16,8 +15,17 @@ SelectQ accesses the state tree rendered on the left side directly and allows yo
 The hierarchy (plugin.managers.structure.hierarchy, also referred to as component manager in 578) is a mirror of the state tree that aggregates loaded trajectories/models/representations/etc. to make it easier to render specialized UI for it #970
 Since the component manager is for UI purposes mostly and works as this kind of mirror, it gets updated asynchronously, which may cause timing issues when trying to extract loci from a component of a structure #578	
 
-
 HIDE NODES FROM THE STATE TREE #899
 You can use isGhost to hide a node from the state tree:
 	this.plugin.builders.data.rawData{..., {state: { isGhost: true }})
 it is also possible to do this with just one subtree, but you would have to write your own custom transforms for that
+
+SAVE AND LOAD STATE #144
+In order to save the state (this.model.molstarState=...) and then reload it to recreate the existing view, you can use 
+	await this.plugin.state.setSnapshot(...)
+(and example use-case would be to load the same file and view multiple times across a jupyter notebook)
+
+EXAMPLES
+#512
+example on how to build the state tree
+

@@ -1,5 +1,4 @@
 refer to https://github.com/molstar/molstar/tree/master/docs/state
-apparently, a transform takes some data and adds it to the state tree
 one of the most common use cases for transforms is loading a structure from a file, string or url
 
 APPLY, PARAMS AND PROPS
@@ -13,6 +12,7 @@ the transform definitions declare the data types they take and return, via the k
 			to: SO.Molecule.Structure.Representation3D,
 			...
 apply takes a transform, params (optional) and props (optional)
+	can also be found as apply(ref, params, plugin)
 params can be defined in the transform's signature
 	for example in examples/alpha-orbitals/index.js, 
 		polymer = structure.apply(StructureComponent, { type: { name: 'static', params: 'polymer' } });

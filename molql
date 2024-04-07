@@ -1,6 +1,8 @@
 MOLQL SELECTIONS
 import { Script } from '../../mol-script/script';
 import { MolScriptBuilder as MS } from '../language/builder';
+	OR
+	import { MolScriptBuilder as MS } from 'molstar/lib/mol-script/language/builder';
 import { StructureSelectionQuery, StructureSelectionCategory } from '../../mol-plugin-state/helpers/structure-selection-query';
 
 selections can be turned into queries, which remember atom ids, chains, etc #461
@@ -35,20 +37,9 @@ ammp: atom macromolecular property
 MS.core.set.has : Check if the 1st argument includes the value of the 2nd
 isSubset: Check if the 1st argument is a subset of the 2nd
 
+
+
 EXAMPLES
-selecting (programmatically) just one chain, molQL?
-https://github.com/molstar/molstar/issues/250
-	you have to build your own custom state
-	import { MolScriptBuilder as MS } from 'molstar/lib/mol-script/language/builder';
-
-	const data = await plugin.builders.data.download({ url: Asset.Url(url) });
-	const trajectory = await plugin.builders.structure.parseTrajectory(data, format);
-	const model = await plugin.builders.structure.createModel(trajectory);
-	const structure = await plugin.builders.structure.createStructure(model, assemblyId ? { name: 'assembly', params: { id: assemblyId } } : void 0);
-	const query = MS.struct....;
-	const component = await plugin.builders.structure.tryCreateComponentFromExpression(structure, query, `Chain C` /* needs to be unique per component */);
-	if (component) await plugin.builders.structure.representation.addRepresentation(component, { type: 'cartoon' });
-
 in the definition given in https://molstar.org/docs/viewer-state/
 	const selection = Script.getStructureSelection(Q => Q.struct.generator.atomGroups({
     	'chain-test': Q.core.rel.eq(['B', Q.ammp('label_asym_id')])
@@ -66,37 +57,40 @@ how to visualize particular chain?
 hints at the use of molscript-molQL to select chains
 (sel.atom.atom-groups :atom-test (= atom.chain A))
 
-How can I programmatically select multiple atoms at once?
-https://github.com/molstar/molstar/issues/822
-ejemplo de selección de varios átomos
-const nosBridges = StructureSelectionQuery('NOS Bridges', MS.struct.modifier.union([
-    MS.struct.modifier.wholeResidues([
-        MS.struct.filter.isConnectedTo({
-            0: MS.struct.generator.atomGroups({
-                'residue-test': MS.core.set.has([MS.set('CSO', 'LYS'), MS.ammp('auth_comp_id')]),
-                'atom-test': MS.core.set.has([MS.set('OD', 'NZ'), MS.ammp('label_atom_id')])
-            }),
-            target: MS.struct.generator.atomGroups({
-                'residue-test': MS.core.set.has([MS.set('CSO', 'LYS'), MS.ammp('auth_comp_id')]),
-                'atom-test': MS.core.set.has([MS.set('OD', 'NZ'), MS.ammp('label_atom_id')])
-            }),
-            'bond-test': true
-        })
-    ])
-]), { category: StructureSelectionCategory.Bond });
+selecting just one chain #250
+	//...build state with structure...
+	const query = MS.struct....;
+	const component = await plugin.builders.structure.tryCreateComponentFromExpression(structure, query, `Chain C` /* needs to be unique per component */);
+	if (component) await plugin.builders.structure.representation.addRepresentation(component, { type: 'cartoon' });
+
+selecting multiple atoms at once #822
+	const nosBridges = StructureSelectionQuery('NOS Bridges', MS.struct.modifier.union([
+		MS.struct.modifier.wholeResidues([
+			MS.struct.filter.isConnectedTo({
+				0: MS.struct.generator.atomGroups({
+					'residue-test': MS.core.set.has([MS.set('CSO', 'LYS'), MS.ammp('auth_comp_id')]),
+					'atom-test': MS.core.set.has([MS.set('OD', 'NZ'), MS.ammp('label_atom_id')])
+				}),
+				target: MS.struct.generator.atomGroups({
+					'residue-test': MS.core.set.has([MS.set('CSO', 'LYS'), MS.ammp('auth_comp_id')]),
+					'atom-test': MS.core.set.has([MS.set('OD', 'NZ'), MS.ammp('label_atom_id')])
+				}),
+				'bond-test': true
+			})
+		])
+	]), { category: StructureSelectionCategory.Bond });
 
 Selection of residues #799
-const structureData = window.molstar.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data;
-const sel = Script.getStructureSelection(Q => Q.struct.generator.atomGroups({
-    "residue-test": MS.core.set.has([
-        MS.set(...selected_residues),
-        MS.ammp("auth_seq_id"),
-    ]),
-    'group-by': Q.struct.atomProperty.macromolecular.residueKey()
-}), structureData)
+	const structureData = window.molstar.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data;
+	const sel = Script.getStructureSelection(Q => Q.struct.generator.atomGroups({
+		"residue-test": MS.core.set.has([
+			MS.set(...selected_residues),
+			MS.ammp("auth_seq_id"),
+		]),
+		'group-by': Q.struct.atomProperty.macromolecular.residueKey()
+	}), structureData)
 
-#168
-Selecting a single residue
+Selecting a single residue #168
 	const expr = MS.struct.generator.atomGroups({
 		  "residue-test": MS.core.rel.eq([
 			  MS.struct.atomProperty.macromolecular.auth_seq_id(),
@@ -113,7 +107,7 @@ Selecting multiple residues
 		'residue-test': MS.core.set.has([MS.set([556, 558, 557]), MS.ammp('auth_seq_id')])
 	})
 
-Create an EXPRESSION to select multiple residues by auth_sequence_id and chain
+Create an EXPRESSION to select multiple residues by auth_sequence_id and chain #168
 	export function createSequenceIdExpression(
 	  sequenceIds: number[],
 	  chain?: string
@@ -136,8 +130,7 @@ Create an EXPRESSION to select multiple residues by auth_sequence_id and chain
 	  return MS.struct.generator.atomGroups(query);
 	}
 
-using molQL to define selections
-https://github.com/molstar/molstar/issues/149
+using molQL to define selections #149
 
 Example given by dsenhal (protopedia-wrapper/index.ts)
 hetGroups = {

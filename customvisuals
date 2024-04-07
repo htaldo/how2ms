@@ -1,3 +1,6 @@
+#82
+If you want custom visuals, you need to create a custom Representation that builds it and then a Transform, that adds it to the state tree.
+
 #635
 When creating geometry (mesh, spheres, lines, ...) you assign a group to a vertex, sphere, line... when creating a visual you provide functions that map those groups to locations and loci
 
