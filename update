@@ -1,6 +1,8 @@
 THE UPDATE PATTERN
+In general, the state is built though plugin.build() and applying a series of transforms and updates. This is what creates the "JSON" description of the state which is the "reconciled" similar to how react works when updating the DOM.
+you can batch many updates in a single commit too. If you search the source for .build() there will be some examples of that. #301
 
-build,update,to, apply, commit
+build,update,to,apply,commit
 	pluing.build().to(selector).update(createStructureRepresentationParams(...));
 const update = plugin.build() or plugin.state.build()
 update
@@ -33,6 +35,10 @@ const update = molstar.build();
 	for (const ref of roots) update.delete();
 	await update.commit();
 
+EXAMPLES
+an approach to change any paramaters about the visuals #298
+	this can be used to change a representation type to another (cartoon to gaussian surface, etc)
+
 example:
 	### INIT function, e.g. in useEffect
 	const ref = await window.molstar.builders.data.download(
@@ -50,4 +56,3 @@ example:
 	const update = molstar.build();
 	update.delete(ref); # this is the ref from above
 	await update.commit();
-

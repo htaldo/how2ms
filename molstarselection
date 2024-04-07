@@ -15,11 +15,9 @@ granularity definitions can be found at loci.ts:
 the granularity value can be changed programmatically via
 	this.plugin.managers.interactivity.setProps({granularity: "x"});
 
-en selection.tsx salen definiciones de highlight
 
-
-msp-form-control es donde se ven los tipos de selección, y es parte de msp-selection-viewport-controls
-	ambos se pueden encontrar en selection.tsx
+in the GUI, msp-form-control displays the types of selection, and belongs to msp-selection-viewport-controls
+	both can be found in selection.tsx
 
 en selection.tsx aparece setGranularity, que usa setProps y afecta a un PureSelectControl
 	PureSelectControl está en div className="msp-flex-row"
@@ -31,8 +29,6 @@ en selection.tsx aparece setGranularity, que usa setProps y afecta a un PureSele
 
 la definición de PureSelectControl se encuentra en controls/parameters.tsx
 	Ya no fue necesario bajar hasta ese nivel
-
-
 
 QUITAR LOS BOTONES DE ARRIBA
 Hiding Right Panel and structure colour
@@ -54,3 +50,6 @@ parece que hay relación con behaviors o behaviors.interaction
 DETECTAR SELECCIÓN DE CADENAS
 s = viewer.plugin.managers.structure.hierarchy.selection.structures[0]
 sel = viewer.plugin.managers.structure.selection.getStructure(s)
+
+EXTRA
+definitions of higlight can be found in selection.tsx

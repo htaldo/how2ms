@@ -29,6 +29,7 @@ Mol* can also load data from string:
 		const trajectory = await plugin.builders.structure.parseTrajectory(data, format);
 		await plugin.builders.structure.hierarchy.applyPreset(trajectory, 'default');
 	loadStructureFromData is also available in the Viewer object
+when you load a trajectory, each frame is a different structure #461
 
 NOTE:
 Unfortunately, loading the structure using loadStructureFrom* makes it kind of hard to customize the loaded data by code. #131

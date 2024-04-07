@@ -8,12 +8,21 @@ SNAPSHOT
 The state tree was designed around the idea that the information needed (to update a node?) is contained in the props of a node and it uses react-like state reconciliation to update what is rendered.  #622
 
 SELECTQ AND HIERARCHY
-You can query the state with plugin.state.data.selectQ. Maybe plugin.managers.structure.hierarchy.current/selection can help too. #454
+You can query the state/structures in two ways #397 #454
+	directly from the state tree, via plugin.state.data.selectQ, which is generally recommended
+	or with plugin.managers.structure.hierarchy.current/selection
+OR if you load the structures building state manually (data->trajectory->model->structure), you can get the refs directly without having to query
+
 SelectQ accesses the state tree rendered on the left side directly and allows you to manipulate it #970
 	more about selectQ in selector
 
-The hierarchy (plugin.managers.structure.hierarchy, also referred to as component manager in 578) is a mirror of the state tree that aggregates loaded trajectories/models/representations/etc. to make it easier to render specialized UI for it #970
+The hierarchy (plugin.managers.structure.hierarchy, also referred to as component manager in 578, or as the structure hierarchy manager) is a mirror of the state tree that aggregates loaded trajectories/models/representations/etc. to make it easier to render specialized UI for it #970
 Since the component manager is for UI purposes mostly and works as this kind of mirror, it gets updated asynchronously, which may cause timing issues when trying to extract loci from a component of a structure #578	
+
+DIFFERENCE BETWEEN HIERARCHY.CURRENT AND HIERARCHY.SELECTION #915
+
+GET STRUCTURES WITH SELECTION #743
+const sel = this.plugin.managers.structure.hierarchy.getStructuresWithSelection();
 
 HIDE NODES FROM THE STATE TREE #899
 You can use isGhost to hide a node from the state tree:
@@ -26,6 +35,24 @@ In order to save the state (this.model.molstarState=...) and then reload it to r
 (and example use-case would be to load the same file and view multiple times across a jupyter notebook)
 
 EXAMPLES
-#512
-example on how to build the state tree
+example on how to build the state tree #512
 
+get data from the hierarchy #256
+	data = plugin.managers.structure.hierarchy.current.structures[i]?.cell.obj?.data;
+	
+use the hierarchy to get number of selected atoms and their indices #689
+	plugin.managers.structure.hierarchy.current.structures[0].selection.elementCount //get the number of selected atoms
+	plugin.managers.structure.hierarchy.current.structures[0].selection.getLoci(...) //get selected atom indices
+		you can either use the element field of the loci (the index of the atom in the internal representation) or use StructureProperties.atom.sourceIndex to get the index of the atom in the source file
+
+build the data/trajectory/structure/representation hierarchy "by hand" #256
+const _data = await this.plugin.builders.data.rawData({ data, label: options?.dataLabel }); // .download
+const trajectory = await this.plugin.builders.structure.parseTrajectory(_data, format);
+const model = await this.plugin.builders.structure.createModel(trajectory);
+const structure = await this.plugin.builders.structure.createStructure(model);
+const preset = await plugin.builders.structure.representation.applyPreset(structure, 'polymer-and-ligand');
+// preset?.components?.ligand
+// preset?.representations?.ligand
+
+EXTRA
+#622 has an interesting example of iteration over the hierarchy structures

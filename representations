@@ -81,14 +81,16 @@ MOVE REPRESENTATIONS (AND UNDERLYING STRUCTURES)
 transform conformation
 transforming a volume under a rotation and translation #1055
 
-APPLYPRESET
-The applyPreset function returns a dictionary with references #985
-
 GETTING STRUCTUREREPRESENTATIONPROPS PROGRAMMATICALLY
 to retrieve representation parameters from a representation's ref
 	const repr = await viewer.plugin.builders.structure.representation.addRepresentation(structure, _options_);
 	const params = repr.cell?.transform.params;
 
+SUBSCRIBING TO REPRESENTATION CHANGES
+#81
+subscribe to plugin.state.data.events.changed and access the desired objects through refs or selectors
+OR
+subscribe to plugin.managers.structure.hierarchy.behaviors.selection which gives you an object with the hierarchy and current trajectory/model/structure selection
 
 EXAMPLES
 

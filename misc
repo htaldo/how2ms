@@ -20,19 +20,16 @@ create a structure object based on multiple models. In this case the interaction
 OR
 write a custom visual that takes the structures as input
 
-SUBSCRIBING TO REPRESENTATION CHANGES
-#81
-subscribe to plugin.state.data.events.changed and access the desired objects through refs or selectors
-OR
-subscribe to plugin.managers.structure.hierarchy.behaviors.selection which gives you an object with the hierarchy and current trajectory/model/structure selection
-
 EXTRACTING AN ATOM'S CHARGE #585
 
 COLOR SELECTION IN SEQUENCE PANEL #233
 
 DIFFERENCE BETWEEN ASSEMBLY AND ASYMMETRIC UNITS (MODEL) #970
 
+TRACKING + GETTING LATEST COORDINATE CHANGES AFTER TRANSFORMS #1067
 
-
+NON-COVALENT INTERACTION CALCULATION #287
 
 const CreateTransformer = StateTransformer.builderFactory('custom');
+
+show and tell, spencel's example of epitope highlighting #715
