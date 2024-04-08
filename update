@@ -1,9 +1,26 @@
 THE UPDATE PATTERN
 In general, the state is built though plugin.build() and applying a series of transforms and updates. This is what creates the "JSON" description of the state which is the "reconciled" similar to how react works when updating the DOM.
-you can batch many updates in a single commit too. If you search the source for .build() there will be some examples of that. #301
+You can batch many updates in a single commit too. If you search the source for .build() there will be some examples of that. #301
+
+#68
+//load structures
+//create components from structures
+const builder = this.plugin.builders.structure.representation;
+const update = this.plugin.build();
+if (yourComponent) builder.buildRepresentation(update, yourComponent, params, tag(?))
+await update.commit();
+
+#404
+await plugin.build()
+    .to("ref or selector to repr you want to apply params")
+    .update(createStructureRepresentationParams(plugin, undefined, { 
+        type: 'cartoon',
+        color: 'name-of-my-theme' as any, // need as any because it's not a built-in theme
+        colorParams: { pass: 1, params: "2", here: {} }
+    }))
+    .commit();
 
 build,update,to,apply,commit
-	pluing.build().to(selector).update(createStructureRepresentationParams(...));
 const update = plugin.build() or plugin.state.build()
 update
 	.toRoot()
@@ -13,14 +30,21 @@ update
 		.update (?)
 			.commit
 await update.commit();
----
+
 you can finish a function with return update.commit(); #149
 when/why can update be a function argument? like in #264
 	update: StateBuilder.To<any, any>
 #664 may be of help
 
-UPDATE MULTIPLE TRANSFORMS
-you can update multiple transforms at the same time like this: #134
+UPDATE THEMES FOR MULTIPLE REPRESENTATIONS #622
+const update = this.plugin.build();
+for (const repr of reprs) {
+  update.to(repr).update(createParams(...));
+}
+await update.commit();
+
+UPDATE MULTIPLE TRANSFORMS #134
+you can update multiple transforms at the same time like this:
 	const refsOrSelectors = ...;
 	const update = pluing.build();
 	for (const r of refsOrSelectors) {
@@ -56,3 +80,6 @@ example:
 	const update = molstar.build();
 	update.delete(ref); # this is the ref from above
 	await update.commit();
+
+EXTRA
+#149 CHANGE THE OPACITY OF THE REPRESENTATION LAYER PROGRAMMATICALLY

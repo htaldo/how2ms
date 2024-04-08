@@ -3,6 +3,9 @@ const repr = struct.components[0].representations[0].cell;
 	representations[0] is a StructureRepresentationRef
 	representations[0].cell is a StateObjectCell
 
+REPRESENTATION VS VISUALS
+The visual creation happens asynchronously after the state tree has been reconciled. #824
+
 LIST REPRESENTATION REFS FOR A GIVEN STRUCTURE
 #557
 
@@ -18,6 +21,11 @@ await plugin.build()
 		colorParams: { value: Color(0xFF0000) }
 	}))
 	.commit();
+to update a representation using an external button #134
+you can do the following in a button handler
+	plugin.build()
+		.to(selector)
+		.update(createStructureRepresentationParams(...));
 
 
 MANAGE REPRESENTATIONS
@@ -91,6 +99,24 @@ SUBSCRIBING TO REPRESENTATION CHANGES
 subscribe to plugin.state.data.events.changed and access the desired objects through refs or selectors
 OR
 subscribe to plugin.managers.structure.hierarchy.behaviors.selection which gives you an object with the hierarchy and current trajectory/model/structure selection
+
+ITERATE OVER REPRESENTATIONS
+you can gather the representations with: #359
+	const reprs = this.plugin.state.data
+		.selectQ(p => p.root.children().withTransformer(StateTransforms.Representation.StructureRepresentation3D));
+OR with: #426
+	const reprs = state.select(StateSelection.Generators.ofType(PluginStateObject.Molecule.Structure.Representation3D)); 
+and then iterate doing
+	for (const r of reprs) {
+		//process representation
+	}
+
+ITERATE OVER VISUALS #359
+for (const r of myVisuals) {
+	//process visuals
+}
+await update.commit();
+
 
 EXAMPLES
 

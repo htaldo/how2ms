@@ -4,8 +4,15 @@ commonly, structures are loaded with a pattern like this: #925, #144
 	const data = await plugin.builders.data.download({ url: 'https://alphafold.ebi.ac.uk/files/AF-Q8W3K0-F1-model_v4.cif' }, { state: { isGhost: false } });
 	const trajectory = await plugin.builders.structure.parseTrajectory(data, 'mmcif');
 	const model = await plugin.builders.structure.createModel(trajectory);
-	const struct = await plugin.builders.structure.createStructure(model);
-yet another example is given in #250
+	const structure = await plugin.builders.structure.createStructure(model);
+
+yet another example is given in #68
+	const data = await this.plugin.builders.data.download({ url });
+	const trajectory = await this.plugin.builders.structure.parseTrajectory(data, format);
+	const model = await this.plugin.builders.structure.createModel(trajectory);
+	const structure = await this.plugin.builders.structure.createStructure(model);
+
+and another in #250
 	const data = await plugin.builders.data.download({ url: Asset.Url(url) });
 	const trajectory = await plugin.builders.structure.parseTrajectory(data, format);
 	const model = await plugin.builders.structure.createModel(trajectory);

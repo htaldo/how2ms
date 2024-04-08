@@ -1,6 +1,8 @@
 STATE AND THE STATE TREE
 refer to https://github.com/molstar/molstar/tree/master/docs/state
 
+when you download a pdb file you should get a reference to the root (usually the download transform) #454
+
 in general, the state is built through plugin.build() and applying a series of transformations and updates. This is what creates the "JSON" description of the state which is the "reconciled" similar to how react works when updating the DOM #144
 
 SNAPSHOT

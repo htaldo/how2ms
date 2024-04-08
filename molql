@@ -9,11 +9,11 @@ selections can be turned into queries, which remember atom ids, chains, etc #461
 
 WORKFLOW
 Script.getStructureSelection
-	the selection expression can be made in 2 ways
-		Q => Q.struct.generator*
-		MS.struct.generator.*
-			in this approach it seems common to assign the whole thing to an expression variable
-	the selection can be assigned to a variable (for example, sel)
+the selection expression can be made in 2 ways
+	Q => Q.struct.generator*
+	MS.struct.generator.*
+		in this approach it seems common to assign the whole thing to an expression variable
+the selection can be assigned to a variable (for example, sel)
 The selection can be assigned to a loci
 	const loci = StructureSelection.toLociWithSourceUnits(sel);
 
@@ -37,7 +37,9 @@ ammp: atom macromolecular property
 MS.core.set.has : Check if the 1st argument includes the value of the 2nd
 isSubset: Check if the 1st argument is a subset of the 2nd
 
-
+NOTES
+You cannot change the representation of a selection, you can only add an existing one #209
+	what you can do instead is create a structure from the selection and change its parameters
 
 EXAMPLES
 in the definition given in https://molstar.org/docs/viewer-state/
